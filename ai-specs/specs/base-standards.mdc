@@ -3,6 +3,197 @@ description: This document contains all development rules and guidelines for thi
 alwaysApply: true
 ---
 
+## Contexto del Proyecto
+
+### Nombre y Descripción
+- **Nombre**: Buscalibre Price Tracker (LibroBaratito)
+- **Objetivo**: Plataforma web que monitorea precios de libros en Buscalibre.com, notifica a los usuarios cuando el precio baja a un umbral deseado, y muestra el historial de precios.
+- **Usuario objetivo**: Personas que compran libros frecuentemente en Buscalibre y quieren aprovechar las mejores ofertas sin revisar manualmente los precios.
+- **Problema que resuelve**: Los precios de Buscalibre fluctúan constantemente. Hoy un libro vale $25.000 CLP, mañana puede estar a $18.000. Sin un sistema de monitoreo, el usuario pierde esas oportunidades.
+
+### Funcionalidades Principales
+- El usuario crea una cuenta y se autentica
+- El usuario agrega libros pegando la URL de Buscalibre
+- El sistema hace scraping automático del libro (título, autor, precio, imagen)
+- El sistema revisa los precios cada 12 horas (cron job)
+- El sistema guarda el historial completo de precios
+- El usuario puede ver el historial de precios en un gráfico
+- El usuario configura un precio umbral por libro
+- El sistema envía un email cuando el precio baja del umbral
+
+### Stack Tecnológico
+
+#### Herramientas de desarrollo (stack de IA)
+| Herramienta | Rol | Costo |
+|-------------|-----|-------|
+| OpenCode | Agente IA en terminal | Gratis |
+| Gemini 2.5 Flash | Modelo principal del agente | Gratis (free tier) |
+| GitHub MCP | PRs, reviews, branches automáticos | Gratis |
+| Jira | Gestión de tickets y sprints | Gratis (hasta 10 usuarios) |
+| Excalidraw | Diagramas de arquitectura | Gratis |
+| LIDR ai-specs | Base del sistema de specs | Gratis (MIT) |
+
+#### Stack de la aplicación
+| Capa | Tecnología | Hosting | Costo |
+|------|------------|---------|-------|
+| Frontend | Next.js 14 (App Router) + TypeScript | Vercel | Gratis |
+| Backend + Scraper + Cron | Hono + Node.js (TypeScript) | Render | Gratis |
+| Base de datos | Supabase (PostgreSQL) | Supabase Cloud | Gratis |
+| Autenticación | Supabase Auth | Supabase Cloud | Gratis |
+| Email | Resend | Resend Cloud | Gratis |
+
+### Estructura del Monorepo
+```
+buscalibre-tracker/
+├── frontend/          → Next.js (Vercel)
+│   ├── app/
+│   │   ├── dashboard/page.tsx
+│   │   ├── books/[id]/page.tsx
+│   │   ├── books/add/page.tsx
+│   │   ├── notifications/page.tsx
+│   │   └── profile/page.tsx
+│   ├── lib/
+│   │   └── supabase.ts
+│   └── package.json
+├── backend/           → Hono + Node.js (Render)
+│   ├── src/
+│   │   ├── routes/
+│   │   │   ├── books.ts
+│   │   │   ├── alerts.ts
+│   │   │   └── notifications.ts
+│   │   ├── services/
+│   │   │   ├── scraper.ts
+│   │   │   ├── cron.ts
+│   │   │   └── email.ts
+│   │   ├── lib/
+│   │   │   └── supabase.ts
+│   │   └── index.ts
+│   └── package.json
+├── ai-specs/          → Specs del repo LIDR
+├── AGENTS.md
+├── GEMINI.md
+└── README.md
+```
+
+### Modelo de Datos (5 entidades)
+
+#### User
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | UUID | Clave primaria |
+| email | String (unique) | Email del usuario |
+| password_hash | String | Hash de la contraseña |
+| name | String | Nombre del usuario |
+| created_at | DateTime | Fecha de registro |
+
+#### Book
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | UUID | Clave primaria |
+| url | String (unique) | URL del libro en Buscalibre |
+| title | String | Título del libro |
+| author | String | Autor |
+| image_url | String | URL de la portada |
+| isbn | String (nullable) | ISBN si está disponible |
+| created_at | DateTime | Fecha de creación |
+| updated_at | DateTime | Última actualización |
+
+#### UserBook (relación usuario-libro)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | UUID | Clave primaria |
+| user_id | UUID (FK) | Referencia a User |
+| book_id | UUID (FK) | Referencia a Book |
+| alert_threshold | Float (nullable) | Precio umbral para alerta |
+| alert_enabled | Boolean | Si las alertas están activas |
+| created_at | DateTime | Fecha en que el usuario agregó el libro |
+
+#### PriceHistory
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | UUID | Clave primaria |
+| book_id | UUID (FK) | Referencia a Book |
+| price | Float | Precio registrado |
+| currency | String | Moneda (CLP, USD, etc.) |
+| available | Boolean | Si el libro está disponible |
+| scraped_at | DateTime | Fecha del scraping |
+
+#### Notification
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | UUID | Clave primaria |
+| user_id | UUID (FK) | Referencia a User |
+| book_id | UUID (FK) | Referencia a Book |
+| price_at_notification | Float | Precio cuando se envió la alerta |
+| sent_at | DateTime | Fecha de envío |
+
+### Backlog - Épicas y Tickets
+
+#### Épica 1 — Autenticación y Gestión de Usuarios
+| Ticket | Historia |
+|--------|----------|
+| BOOK-1 | Como usuario, quiero registrarme con email y contraseña |
+| BOOK-2 | Como usuario, quiero iniciar sesión y recibir un JWT |
+| BOOK-3 | Como usuario, quiero cerrar sesión |
+| BOOK-4 | Como usuario, quiero ver y editar mi perfil |
+
+#### Épica 2 — Gestión de Libros
+| Ticket | Historia |
+|--------|----------|
+| BOOK-5 | Como usuario, quiero agregar un libro pegando la URL de Buscalibre |
+| BOOK-6 | Como sistema, quiero hacer scraping del libro al agregarlo (título, autor, precio, imagen) |
+| BOOK-7 | Como usuario, quiero ver mi lista de libros guardados |
+| BOOK-8 | Como usuario, quiero eliminar un libro de mi lista |
+| BOOK-9 | Como usuario, quiero ver el detalle de un libro con su historial de precios |
+
+#### Épica 3 — Monitoreo de Precios
+| Ticket | Historia |
+|--------|----------|
+| BOOK-10 | Como sistema, quiero revisar los precios de todos los libros activos cada 12 horas |
+| BOOK-11 | Como sistema, quiero guardar cada precio nuevo en el historial |
+| BOOK-12 | Como usuario, quiero ver el historial de precios en un gráfico de línea |
+
+#### Épica 4 — Sistema de Alertas
+| Ticket | Historia |
+|--------|----------|
+| BOOK-13 | Como usuario, quiero configurar un precio umbral para un libro |
+| BOOK-14 | Como sistema, quiero detectar cuando el precio baja del umbral configurado |
+| BOOK-15 | Como sistema, quiero enviar un correo al usuario cuando se detecte un buen precio |
+| BOOK-16 | Como usuario, quiero ver el historial de notificaciones recibidas |
+| BOOK-17 | Como usuario, quiero activar/desactivar alertas para un libro específico |
+
+#### Épica 5 — Dashboard y UI
+| Ticket | Historia |
+|--------|----------|
+| BOOK-18 | Como usuario, quiero ver un dashboard con todos mis libros y precios actuales |
+| BOOK-19 | Como usuario, quiero ver visualmente qué libros tienen el precio más bajo histórico |
+| BOOK-20 | Como usuario, quiero que la app sea responsiva para usarla desde el celular |
+
+#### Épica 6 — Configuración del Entorno
+| Ticket | Historia |
+|--------|----------|
+| BOOK-21 | Como developer, quiero instalar y configurar OpenCode |
+| BOOK-22 | Como developer, quiero configurar Gemini 2.5 Flash como modelo del agente |
+| BOOK-23 | Como developer, quiero configurar GitHub MCP |
+| BOOK-24 | Como developer, quiero configurar Jira MCP |
+| BOOK-25 | Como developer, quiero instalar y configurar Excalidraw |
+| BOOK-26 | Como developer, quiero clonar y configurar LIDR ai-specs |
+
+#### Épica 7 — Infraestructura del Proyecto
+| Ticket | Historia |
+|--------|----------|
+| BOOK-27 | Como developer, quiero crear el repositorio buscalibre-frontend en GitHub |
+| BOOK-28 | Como developer, quiero crear el repositorio buscalibre-backend en GitHub |
+| BOOK-29 | Como developer, quiero configurar cuenta en Vercel para el frontend |
+| BOOK-30 | Como developer, quiero configurar cuenta en Render para el backend |
+| BOOK-31 | Como developer, quiero configurar cuenta en Supabase |
+| BOOK-32 | Como developer, quiero configurar cuenta en Resend |
+| BOOK-33 | Como developer, quiero configurar UptimeRobot para keep-alive |
+| BOOK-34 | Como developer, quiero instalar Next.js 14 con TypeScript y configurar buscalibre-frontend |
+| BOOK-35 | Como developer, quiero instalar Hono con TypeScript y configurar buscalibre-backend |
+
+---
+
 ## 1. Core Principles
 
 - **Small tasks, one at a time**: Always work in baby steps, one at a time. Never go forward more than one step.
@@ -30,4 +221,3 @@ For detailed standards and guidelines specific to different areas of the project
 - [Backend Standards](./backend-standards.mdc) - API development, database patterns, testing, security and backend best practices
 - [Frontend Standards](./frontend-standards.mdc) - React components, UI/UX guidelines, and frontend architecture
 - [Documentation Standards](./documentation-standards.mdc) - Technical documentation structure, formatting, and maintenance guidelines, including AI standards like this document
-
