@@ -53,7 +53,10 @@ If the user **explicitly** requested no git operations (e.g. "no PR", "only comm
 - Make it **descriptive** (per Git Workflow in `backend-standards.mdc` and `frontend-standards.mdc`).
 - Structure it so that:
   - **Subject line**: Short, imperative summary (e.g. "Add candidate filters to position list", "Fix validation for application deadline"). Optionally prefix with a scope or ticket id (e.g. `SCRUM-123: Add candidate filters`).
-  - **Body** (if needed): Bullet points or short paragraphs describing what changed and why (areas touched, new behavior, fixes). Reference ticket IDs here if they apply.
+  - **Body** (if needed): 
+    - Bullet points or short paragraphs describing what changed and why (areas touched, new behavior, fixes)
+    - Reference ticket IDs here if they apply
+    - **MUST include Jira closing reference**: At the end of the body, add: `Closes: https://mauriciofb.atlassian.net/browse/[TICKET-ID]`
 - Do not commit secrets, `.env`, or other sensitive or generated artifacts.
 
 ## 4. Commit and push
@@ -66,7 +69,9 @@ If the user **explicitly** requested no git operations (e.g. "no PR", "only comm
 - Use the **GitHub CLI (`gh`)** for all GitHub operations (per `develop-backend.md`).
 - Create or update the PR for the current branch:
   - **Title**: Clear, aligned with the commit (e.g. include ticket ID if applicable: `[SCRUM-123] Add candidate filters to position list`).
-  - **Description**: Summarize the change set, link to the ticket if relevant, and note any testing or follow-ups.
+  - **Description**: 
+    - Summarize the change set, link to the ticket if relevant, and note any testing or follow-ups
+    - **MUST include Jira ticket link** in the description using format: `[TICKET-ID](https://mauriciofb.atlassian.net/browse/TICKET-ID)`
 - If the repo uses branch protection or required checks, mention that the PR is ready for review once checks pass.
 
 ## 6. Summary for the user
