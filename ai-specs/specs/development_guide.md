@@ -1,70 +1,49 @@
 # Development Guide
 
-This guide provides step-by-step instructions for setting up the development environment and running tests for the LTI ATS system.
+This guide provides step-by-step instructions for setting up the development environment and running tests for the Buscalibre Price Tracker (LibroBaratito) system.
 
 ## 🚀 Setup Instructions
 
 ### Prerequisites
 
 Ensure you have the following installed:
-- **Node.js** (v16 or higher)
-- **npm** (v8 or higher)
-- **Docker** and **Docker Compose**
+- **Node.js** (v18 or higher)
+- **npm** (v9 or higher)
 - **Git**
 
 ### 1. Clone the Repository
 
 ```bash
-git clone git@github.com:LIDR-academy/AI4Devs-LTI-extended.git
-cd AI4Devs-LTI-extended
+git clone git@github.com:ivanexDev/buscalibre-tracker.git
+cd buscalibre-tracker
 ```
 
 ### 2. Environment Configuration
 
-Create environment files for both backend and frontend:
+Create environment files for both backend and frontend. Copy the example environment files:
 
 **Backend Environment** (`backend/.env`):
 ```env
-# Database Configuration
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=LTIdbUser
-DB_PASSWORD=D1ymf8wyQEGthFR1E9xhCq
-DB_NAME=LTIdb
+# Supabase Configuration
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Application Configuration
 PORT=3000
 NODE_ENV=development
 
-# Prisma Database URL
-DATABASE_URL="postgresql://LTIdbUser:D1ymf8wyQEGthFR1E9xhCq@localhost:5432/LTIdb"
+# Resend (Email Service)
+RESEND_API_KEY=your_resend_api_key
 ```
 
-**Frontend Environment** (`frontend/.env`):
+**Frontend Environment** (`frontend/.env.local`):
 ```env
-REACT_APP_API_URL=http://localhost:3000
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 3. Database Setup (PostgreSQL with Docker)
-
-Start the PostgreSQL database using Docker Compose:
-
-```bash
-# Start PostgreSQL container
-docker-compose up -d
-
-# Verify the database is running
-docker-compose ps
-```
-
-The PostgreSQL database will be available at:
-- **Host**: `localhost`
-- **Port**: `5432`
-- **Database**: `LTIdb`
-- **Username**: `LTIdbUser`
-- **Password**: `D1ymf8wyQEGthFR1E9xhCq`
-
-### 4. Backend Setup
+### 3. Backend Setup
 
 ```bash
 # Navigate to backend directory
@@ -73,22 +52,13 @@ cd backend
 # Install dependencies
 npm install
 
-# Generate Prisma client
-npm run prisma:generate
-
-# Run database migrations
-npx prisma migrate deploy
-
-# (Optional) Seed the database with sample data
-npx prisma db seed
-
 # Start the development server
 npm run dev
 ```
 
 The backend API will be available at `http://localhost:3000`
 
-### 5. Frontend Setup
+### 4. Frontend Setup
 
 ```bash
 # Navigate to frontend directory (from project root)
@@ -98,26 +68,10 @@ cd frontend
 npm install
 
 # Start the development server
-npm start
+npm run dev
 ```
 
 The frontend application will be available at `http://localhost:3001`
-
-### 6. Cypress Testing Suite Setup
-
-```bash
-# From the frontend directory
-cd frontend
-
-# Install Cypress (if not already installed)
-npm install
-
-# Open Cypress Test Runner (Interactive)
-npm run cypress:open
-
-# Or run tests headlessly
-npm run cypress:run
-```
 
 ## 🧪 Testing
 
@@ -144,10 +98,39 @@ cd frontend
 # Run unit tests
 npm test
 
-# Run E2E tests with Cypress
-npm run cypress:run
+# Run tests in watch mode
+npm run test:watch
 
-# Open Cypress Test Runner
-npm run cypress:open
+# Run tests with coverage
+npm run test:coverage
 ```
 
+## 📁 Project Structure
+
+```
+buscalibre-tracker/
+├── frontend/          # Next.js 14 (App Router) + TypeScript
+│   ├── app/           # App router pages
+│   ├── lib/           # Supabase client
+│   └── package.json
+├── backend/           # Hono + Node.js (TypeScript)
+│   ├── src/
+│   │   ├── config/    # Configuration files
+│   │   ├── lib/       # Supabase client
+│   │   ├── presentation/
+│   │   │   └── routes/# API routes
+│   │   ├── services/  # Business logic
+│   │   ├── index.ts  # Main entry
+│   │   └── server.ts  # Server setup
+│   └── package.json
+└── ai-specs/          # AI specs and documentation
+```
+
+## 🔧 Technology Stack
+
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Backend**: Hono, Node.js, TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Email**: Resend
+- **Hosting**: Vercel (frontend), Render (backend)
