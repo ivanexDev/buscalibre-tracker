@@ -1,531 +1,164 @@
 ---
-description: Frontend development standards, best practices, and conventions for the LTI React application including component patterns, state management, UI/UX guidelines, and testing practices
-globs: ["frontend/src/**/*.{js,jsx,ts,tsx}", "frontend/cypress/**/*.{ts,js}", "frontend/tsconfig.json", "frontend/cypress.config.ts", "frontend/package.json"]
+description: Frontend development standards, best practices, and conventions for the Buscalibre Price Tracker (LibroBaratito) application using Next.js 14 (App Router), TypeScript, Tailwind CSS, and Supabase Auth.
+globs: ["frontend/app/**/*.tsx", "frontend/components/**/*.tsx", "frontend/lib/**/*.ts", "frontend/package.json"]
 alwaysApply: true
 ---
 
-# Frontend Project Configuration and Best Practices
+# Frontend Project Standards and Best Practices
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Technology Stack](#technology-stack)
   - [Core Technologies](#core-technologies)
-  - [UI Framework](#ui-framework)
-  - [State Management & Data Flow](#state-management--data-flow)
+  - [UI & Styling](#ui--styling)
+  - [Data Fetching & State](#data-fetching--state)
   - [Testing Framework](#testing-framework)
-  - [Development Tools](#development-tools)
-- [Project Structure](#project-structure)
+- [Architecture Overview](#architecture-overview)
+  - [Next.js App Router](#nextjs-app-router)
+  - [Project Structure](#project-structure)
 - [Coding Standards](#coding-standards)
   - [Language and Naming Conventions](#language-and-naming-conventions)
-  - [Component Conventions](#component-conventions)
-  - [State Management](#state-management)
-  - [Service Layer Architecture](#service-layer-architecture)
+  - [React Components](#react-components)
+  - [Server vs Client Components](#server-vs-client-components)
 - [UI/UX Standards](#uiux-standards)
-  - [Bootstrap Integration](#bootstrap-integration)
-  - [Form Handling](#form-handling)
-  - [Navigation Patterns](#navigation-patterns)
-  - [Accessibility](#accessibility)
+  - [Tailwind CSS Integration](#tailwind-css-integration)
+  - [Responsive Design](#responsive-design)
 - [Testing Standards](#testing-standards)
-  - [End-to-End Testing with Cypress](#end-to-end-testing-with-cypress)
-  - [Test Organization](#test-organization)
-- [Configuration Standards](#configuration-standards)
-  - [TypeScript Configuration](#typescript-configuration)
-  - [ESLint Configuration](#eslint-configuration)
-  - [Environment Configuration](#environment-configuration)
-- [Performance Best Practices](#performance-best-practices)
-  - [Component Optimization](#component-optimization)
-  - [Bundle Optimization](#bundle-optimization)
-  - [API Efficiency](#api-efficiency)
 - [Development Workflow](#development-workflow)
-  - [Git Workflow](#git-workflow)
-  - [Development Scripts](#development-scripts)
-  - [Code Quality](#code-quality)
-- [Migration Strategy](#migration-strategy)
-  - [TypeScript Migration](#typescript-migration)
-  - [Component Modernization](#component-modernization)
 
 ---
 
 ## Overview
 
-This document outlines the best practices, conventions, and standards used in the LTI frontend application. These practices ensure code consistency, maintainability, and optimal development experience.
+This document outlines the best practices, conventions, and standards used in the Buscalibre Price Tracker (LibroBaratito) frontend application. The frontend is built with Next.js 14 using the App Router architecture, focusing on performance, accessibility, and type safety.
 
 ## Technology Stack
 
 ### Core Technologies
-- **React 18.3.1**: Modern React with functional components and hooks
-- **TypeScript 4.9.5**: For type safety and better development experience
-- **Create React App 5.0.1**: Build tooling and development server
-- **React Router DOM 6.23.1**: Client-side routing and navigation
+- **Next.js 14**: Framework with App Router support
+- **TypeScript**: Strict type safety
+- **React 18**: UI library with Server Components
+- **Supabase Auth**: Authentication and user management
 
-### UI Framework
-- **Bootstrap 5.3.3**: CSS framework for responsive design
-- **React Bootstrap 2.10.2**: Bootstrap components for React
-- **React Bootstrap Icons 1.11.4**: Icon library
-- **React DatePicker 6.9.0**: Date input components
+### UI & Styling
+- **Tailwind CSS**: Utility-first CSS framework
+- **Lucide React**: Icon library
+- **Shadcn UI**: (Recommended) Reusable UI components
 
-### State Management & Data Flow
-- **React Hooks**: useState, useEffect for local state management
-- **React Beautiful DND 13.1.1**: Drag and drop functionality
-- **Axios**: HTTP client for API communication
+### Data Fetching & State
+- **Server Actions**: For mutations and data handling
+- **Native Fetch**: With Next.js caching and revalidation
+- **React Context**: For global UI state (use sparingly)
 
 ### Testing Framework
-- **Cypress 14.4.1**: End-to-end testing
-- **Jest**: Unit testing (via Create React App)
-- **React Testing Library**: Component testing utilities
+- **Jest**: Unit and integration testing
+- **React Testing Library**: Component testing
+- **Playwright**: (Optional) E2E testing
 
-### Development Tools
-- **ESLint**: Code linting with React-specific rules
-- **TypeScript**: Static type checking
-- **Web Vitals**: Performance monitoring
+## Architecture Overview
 
-## Project Structure
+### Next.js App Router
+
+We leverage Next.js 14 App Router features:
+- **Server Components (RSC)**: Default for all components to minimize client-side JS
+- **Client Components**: Only when interactivity (hooks, event listeners) is needed
+- **Layouts**: For shared UI structures
+- **Loading UI**: Using `loading.tsx` for better UX during data fetching
+- **Error Handling**: Using `error.tsx` for graceful failure handling
+
+### Project Structure
 
 ```
 frontend/
-├── public/                 # Static assets
-├── src/
-│   ├── components/        # Reusable UI components
-│   ├── services/         # API service layer
-│   ├── pages/           # Page components (future organization)
-│   ├── assets/          # Images, fonts, static resources
-│   ├── App.js           # Main application component
-│   ├── index.tsx        # Application entry point
-│   └── index.css        # Global styles
-├── cypress/
-│   └── e2e/            # End-to-end test files
-├── package.json         # Dependencies and scripts
-├── tsconfig.json       # TypeScript configuration
-└── cypress.config.ts   # Cypress configuration
+├── app/                  # App Router pages and layouts
+│   ├── (auth)/           # Authentication routes
+│   ├── dashboard/        # Main user dashboard
+│   ├── books/            # Book details and management
+│   ├── layout.tsx        # Root layout
+│   └── page.tsx          # Home page
+├── components/           # Reusable UI components
+│   ├── ui/               # Atomic components (buttons, inputs)
+│   └── shared/           # Complex shared components
+├── lib/                  # Utilities and Supabase client
+├── hooks/                # Custom React hooks
+├── types/                # TypeScript definitions
+└── public/               # Static assets
 ```
 
 ## Coding Standards
 
-### Naming Conventions
+### Language and Naming Conventions
 
-- **Component Naming**: Use PascalCase for React components (e.g., `CandidateCard`, `PositionDetails`, `RecruiterDashboard`)
-- **Variable Naming**: Use camelCase for variables and functions (e.g., `candidateId`, `handleSubmit`, `fetchPositions`)
-- **Constants Naming**: Use UPPER_SNAKE_CASE for constants (e.g., `MAX_CANDIDATES_PER_PAGE`, `API_BASE_URL`)
-- **Type/Interface Naming**: Use PascalCase for types and interfaces (e.g., `CandidateData`, `PositionProps`, `ICandidateService`)
-- **File Naming**: Use PascalCase for component files (e.g., `CandidateCard.tsx`, `PositionDetails.tsx`) and camelCase for utility files (e.g., `candidateService.js`, `apiUtils.ts`)
-- **CSS Class Naming**: Use kebab-case for CSS classes (e.g., `candidate-card`, `position-details`)
-- **Hook Naming**: Use camelCase starting with "use" prefix (e.g., `useCandidate`, `usePositionData`, `useFormValidation`)
+- **ALL IN ENGLISH**: Code, comments, documentation, and commit messages
+- **Components**: PascalCase (e.g., `BookCard.tsx`)
+- **Functions/Variables**: camelCase (e.g., `fetchPriceHistory`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_RETRY_ATTEMPTS`)
+- **Files**: kebab-case for non-component files, PascalCase for components
 
-**Examples:**
+### React Components
 
-```typescript
-// Good: All in English
-import React, { useState, useEffect } from 'react';
+- Prefer **Functional Components** with arrow functions
+- Use **TypeScript interfaces** for props
+- **Server Components** by default. Add `'use client'` directive only when necessary
 
-type CandidateCardProps = {
-    candidate: Candidate;
-    index: number;
-    onClick: (candidate: Candidate) => void;
-};
+```tsx
+// Server Component Example
+import { getBookDetails } from '@/lib/api';
 
-const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, index, onClick }) => {
-    const [isLoading, setIsLoading] = useState(false);
-    
-    // Handle candidate card click event
-    const handleCardClick = () => {
-        onClick(candidate);
-    };
-    
-    return (
-        <div className="candidate-card" onClick={handleCardClick}>
-            {/* Component JSX */}
-        </div>
-    );
-};
-
-// Avoid: Non-English comments or names
-const TarjetaCandidato: React.FC<PropsTarjetaCandidato> = ({ candidato, indice, alHacerClic }) => {
-    const [estaCargando, setEstaCargando] = useState(false);
-    
-    // Manejar evento de clic en la tarjeta de candidato
-    const manejarClicTarjeta = () => {
-        alHacerClic(candidato);
-    };
-    
-    return (
-        <div className="tarjeta-candidato" onClick={manejarClicTarjeta}>
-            {/* JSX del componente */}
-        </div>
-    );
-};
-```
-
-**Error Messages and Console Logs:**
-
-```typescript
-// Good: English error messages
-catch (error) {
-    console.error('Failed to fetch candidates:', error);
-    setError('Unable to load candidates. Please try again later.');
+interface BookDetailProps {
+  id: string;
 }
 
-// Avoid: Non-English messages
-catch (error) {
-    console.error('Error al obtener candidatos:', error);
-    setError('No se pudieron cargar los candidatos. Por favor, inténtelo de nuevo más tarde.');
+export default async function BookDetail({ id }: BookDetailProps) {
+  const book = await getBookDetails(id);
+  
+  return (
+    <div className="p-4 border rounded-lg">
+      <h1 className="text-2xl font-bold">{book.title}</h1>
+      <p className="text-gray-600">{book.author}</p>
+    </div>
+  );
 }
 ```
 
-**Service Layer Examples:**
+### Server vs Client Components
 
-```typescript
-// Good: English naming in services
-export const candidateService = {
-    getAllCandidates: async () => {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/candidates`);
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching candidates:', error);
-            throw error;
-        }
-    }
-};
-
-// Avoid: Non-English naming
-export const servicioCandidatos = {
-    obtenerTodosLosCandidatos: async () => {
-        try {
-            const respuesta = await axios.get(`${API_BASE_URL}/candidates`);
-            return respuesta.data;
-        } catch (error) {
-            console.error('Error al obtener candidatos:', error);
-            throw error;
-        }
-    }
-};
-```
-
-### Component Conventions
-
-#### Functional Components
-- **Always use functional components** with hooks instead of class components
-- Use **TypeScript for new components** when possible
-- Keep **JavaScript for legacy components** until migration
-
-```typescript
-// Preferred - TypeScript functional component
-import React, { useState, useEffect } from 'react';
-
-type Position = {
-    id: number;
-    title: string;
-    status: 'Open' | 'Contratado' | 'Cerrado' | 'Borrador';
-};
-
-const Positions: React.FC = () => {
-    const [positions, setPositions] = useState<Position[]>([]);
-    // Component logic
-};
-```
-
-#### Component Props
-- **Define TypeScript interfaces** for component props when using TypeScript
-- Use **destructuring** for props
-- Include **default values** where appropriate
-
-```typescript
-type CandidateCardProps = {
-    candidate: Candidate;
-    index: number;
-    onClick: (candidate: Candidate) => void;
-};
-
-const CandidateCard: React.FC<CandidateCardProps> = ({ candidate, index, onClick }) => {
-    // Component implementation
-};
-```
-
-### State Management
-
-#### Local State with Hooks
-- Use **useState** for component-level state
-- Use **useEffect** for side effects and data fetching
-- **Extract custom hooks** for reusable stateful logic
-
-```javascript
-const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    status: 'Borrador'
-});
-
-const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-        ...prev,
-        [name]: value
-    }));
-};
-```
-
-#### Loading and Error States
-- **Always handle loading states** for async operations
-- **Implement error handling** with user-friendly messages
-- **Use React Bootstrap Alert** components for feedback
-
-```javascript
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState('');
-const [success, setSuccess] = useState('');
-
-// In async function
-try {
-    setLoading(true);
-    const data = await apiCall();
-    setSuccess('Operation completed successfully');
-} catch (error) {
-    setError('Error message: ' + error.message);
-} finally {
-    setLoading(false);
-}
-```
-
-### Service Layer Architecture
-
-#### API Services
-- **Centralize API calls** in service files
-- Use **axios** for HTTP requests
-- **Export service objects** with grouped methods
-- **Handle errors at service level** when appropriate
-
-```javascript
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:3010';
-
-export const positionService = {
-    getAllPositions: async () => {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/positions`);
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching positions:', error);
-            throw error;
-        }
-    },
-    
-    updatePosition: async (id, positionData) => {
-        try {
-            const response = await axios.put(`${API_BASE_URL}/positions/${id}`, positionData);
-            return response.data;
-        } catch (error) {
-            console.error('Error updating position:', error);
-            throw error;
-        }
-    }
-};
-```
+- **Server Components**: Fetching data, accessing backend resources, keeping sensitive info off the client
+- **Client Components**: `useState`, `useEffect`, `useContext`, event listeners (`onClick`, etc.), browser-only APIs
 
 ## UI/UX Standards
 
-### Bootstrap Integration
-- Use **React Bootstrap components** instead of plain Bootstrap
-- **Import Bootstrap CSS** in the main App component
-- Follow **Bootstrap responsive grid system** (Container, Row, Col)
+### Tailwind CSS Integration
 
-```javascript
-import { Container, Row, Col, Card, Button, Form, Alert } from 'react-bootstrap';
+- Use Tailwind utility classes for all styling
+- Follow a mobile-first responsive approach
+- Use a consistent spacing and color palette
+- Group related classes for readability
+
+```tsx
+// Example with Tailwind
+<button className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50">
+  Track Book
+</button>
 ```
 
-### Form Handling
-- Use **controlled components** for form inputs
-- Implement **real-time validation** where appropriate
-- **Disable submit buttons** during form submission
-- **Clear form state** after successful submission
+### Responsive Design
 
-```javascript
-<Form onSubmit={handleSubmit}>
-    <Form.Group className="mb-3">
-        <Form.Label>Title *</Form.Label>
-        <Form.Control
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            required
-        />
-    </Form.Group>
-    <Button type="submit" disabled={saving}>
-        {saving ? 'Saving...' : 'Save'}
-    </Button>
-</Form>
-```
-
-### Navigation Patterns
-- Use **React Router** for all navigation
-- **Implement breadcrumbs** with back navigation
-- Use **programmatic navigation** with useNavigate hook
-
-```javascript
-import { useNavigate } from 'react-router-dom';
-
-const navigate = useNavigate();
-
-// Navigation examples
-<Button variant="link" onClick={() => navigate('/')}>
-    ← Back to Dashboard
-</Button>
-```
-
-### Accessibility
-- Include **aria-label** attributes for interactive elements
-- Use **semantic HTML** elements
-- Ensure **keyboard navigation** support
-- Provide **alternative text** for images
-
-```javascript
-<Form.Control 
-    type="text" 
-    placeholder="Search by title" 
-    aria-label="Search positions by title"
-/>
-```
+- Use Tailwind breakpoints (`sm:`, `md:`, `lg:`, `xl:`)
+- Ensure the application is fully functional on mobile devices
+- Optimize images using `next/image`
 
 ## Testing Standards
 
-### End-to-End Testing with Cypress
-- **Test user workflows** rather than implementation details
-- Use **data-testid** attributes for reliable element selection
-- **Organize tests by feature** (candidates.cy.ts, positions.cy.ts)
-- **Include API testing** alongside UI testing
-
-```typescript
-describe('Positions API - Update', () => {
-    beforeEach(() => {
-        cy.window().then((win) => {
-            win.localStorage.clear();
-        });
-    });
-
-    it('should update a position successfully', () => {
-        const updateData = {
-            title: 'Updated Test Position',
-            status: 'Open'
-        };
-
-        cy.request({
-            method: 'PUT',
-            url: `${API_URL}/positions/${testPositionId}`,
-            body: updateData
-        }).then((response) => {
-            expect(response.status).to.eq(200);
-            expect(response.body.data.title).to.eq(updateData.title);
-        });
-    });
-});
-```
-
-### Test Organization
-- **Group related tests** with describe blocks
-- **Use descriptive test names** that explain the expected behavior
-- **Test both success and error scenarios**
-- **Include edge cases** and validation testing
-
-## Configuration Standards
-
-### TypeScript Configuration
-- Enable **strict mode** for type checking
-- Use **path mapping** with "@/*" for cleaner imports
-- Include **both Cypress and Node types**
-- Configure **ES5 target** for broader compatibility
-
-```json
-{
-    "compilerOptions": {
-        "strict": true,
-        "baseUrl": ".",
-        "paths": {
-            "@/*": ["src/*"]
-        },
-        "types": ["cypress", "node"]
-    }
-}
-```
-
-### ESLint Configuration
-- Extend **React App** configuration
-- Include **Jest rules** for testing
-- **Automatic code formatting** and error detection
-- **Consistent code style** across the project
-
-### Environment Configuration
-- Use **environment variables** for API URLs
-- **Separate configurations** for development and production
-- **Configure Cypress** with environment-specific settings
-
-```javascript
-// cypress.config.ts
-export default defineConfig({
-    e2e: {
-        baseUrl: 'http://localhost:3000',
-        env: {
-            API_URL: 'http://localhost:3010'
-        }
-    }
-});
-```
-
-## Performance Best Practices
-
-### Component Optimization
-- **Lazy load** components when appropriate
-- **Memoize expensive calculations** with useMemo
-- **Avoid unnecessary re-renders** with useCallback
-- **Extract reusable logic** into custom hooks
-
-### Bundle Optimization
-- **Tree shaking** enabled through Create React App
-- **Code splitting** at route level
-- **Optimize images** and static assets
-- **Monitor bundle size** with build tools
-
-### API Efficiency
-- **Implement proper error handling** for network requests
-- **Cache API responses** where appropriate
-- **Use loading states** to improve perceived performance
-- **Batch API calls** when possible
+- **TDD**: Write tests before implementation when possible
+- **Component Tests**: Test user interactions and expected rendering
+- **Integration Tests**: Test page-level workflows
+- **Threshold**: Aim for 80% coverage on critical business logic
 
 ## Development Workflow
 
-- **Feature Branches**: Develop features in separate branches, adding descriptive suffix "-frontend" to allow working in parallel and avoid conflicts or collisions
-- **Descriptive Commits**: Write descriptive commit messages in English
-- **Code Review**: Code review before merging
-- **Small Branches**: Keep branches small and focused
-
-### Development Scripts
-```bash
-npm start          # Development server
-npm test           # Run unit tests
-npm run build      # Production build
-npm run cypress:open    # Open Cypress test runner
-npm run cypress:run     # Run Cypress tests headlessly
-```
-
-### Code Quality
-- **ESLint validation** before commits
-- **TypeScript compilation** without errors
-- **All tests passing** before deployment
-- **Performance monitoring** with Web Vitals
-
-## Migration Strategy
-
-### TypeScript Migration
-- **Gradual migration** from JavaScript to TypeScript
-- **New components in TypeScript** by default
-- **Maintain existing JavaScript** components until planned refactor
-- **Add types incrementally** to existing code
-
-### Component Modernization
-- **Functional components** over class components
-- **Hooks** instead of lifecycle methods
-- **React Bootstrap** components for consistency
-- **Responsive design** principles throughout
-
-This document serves as the foundation for maintaining code quality and consistency across the LTI frontend application. All team members should follow these practices to ensure a maintainable and scalable codebase.
+- **Branching**: Use `feature/BOOK-XX-frontend` naming convention
+- **Commits**: Descriptive messages in English
+- **Linting**: Ensure `npm run lint` passes before pushing
+- **Types**: Ensure `npm run type-check` passes

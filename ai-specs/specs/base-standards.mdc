@@ -191,6 +191,7 @@ buscalibre-tracker/
 | BOOK-33 | Como developer, quiero configurar UptimeRobot para keep-alive |
 | BOOK-34 | Como developer, quiero instalar Next.js 14 con TypeScript y configurar buscalibre-frontend |
 | BOOK-35 | Como developer, quiero instalar Hono con TypeScript y configurar buscalibre-backend |
+| BOOK-36 | Como developer, quiero configurar las tablas de Supabase y políticas de RLS |
 
 ---
 
