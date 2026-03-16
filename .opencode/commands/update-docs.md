@@ -1,5 +1,5 @@
 ---
-description: Update documentation and close merged PR tickets in Jira
+description: Update documentation based on recent changes and close merged PR tickets in Jira
 agent: general
 ---
 
