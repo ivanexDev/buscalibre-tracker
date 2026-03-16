@@ -1,372 +1,194 @@
 # Data Model Documentation
 
-This document describes the data model for the LTI (Learning Tracking Initiative) application, including entity descriptions, field definitions, relationships, and an entity-relationship diagram.
+This document describes the data model for the Buscalibre Price Tracker (LibroBaratito) application, including entity descriptions, field definitions, relationships, and an entity-relationship diagram.
 
 ## Model Descriptions
 
-### 1. Candidate
-Represents a job candidate who can apply for positions within the system.
+### 1. User
+Represents a user who tracks book prices on Buscalibre. This table references Supabase Auth users.
 
 **Fields:**
-- `id`: Unique identifier for the candidate (Primary Key)
-- `firstName`: Candidate's first name (max 100 characters)
-- `lastName`: Candidate's last name (max 100 characters)
-- `email`: Candidate's unique email address (max 255 characters)
-- `phone`: Candidate's phone number (optional, max 15 characters)
-- `address`: Candidate's address (optional, max 100 characters)
+- `id`: Unique identifier for the user (Primary Key, UUID, references auth.users.id)
+- `email`: User's unique email address (max 255 characters)
+- `name`: User's name (max 100 characters)
+- `created_at`: DateTime when the user was created
+- `updated_at`: DateTime of last update
 
 **Validation Rules:**
-- First name and last name are required, 2-100 characters, letters only
-- Email is required, must be unique, and follow valid email format
-- Phone is optional but must follow Spanish format (6|7|9)XXXXXXXX if provided
-- Address is optional but cannot exceed 100 characters
-- Maximum of 3 education records per candidate
+- Email is required and must be unique
+- Name is required
+
+**Row Level Security (RLS):**
+- Users can only view their own profile
+- Users can only update their own profile
+- Insert is managed automatically via trigger when user registers via Supabase Auth
 
 **Relationships:**
-- `educations`: One-to-many relationship with Education model
-- `workExperiences`: One-to-many relationship with WorkExperience model
-- `resumes`: One-to-many relationship with Resume model
-- `applications`: One-to-many relationship with Application model
+- `userBooks`: One-to-many relationship with UserBook model
+- `notifications`: One-to-many relationship with Notification model
 
-### 2. Education
-Represents educational background information for candidates.
+**Note:** Authentication is handled by Supabase Auth (`auth.users` table). This `public.users` table stores additional profile information and is automatically populated via trigger when a new user registers.
+
+### 2. Book
+Represents a book available on Buscalibre.com.
 
 **Fields:**
-- `id`: Unique identifier for the education record (Primary Key)
-- `institution`: Name of the educational institution (max 100 characters)
-- `title`: Degree or certification title obtained (max 250 characters)
-- `startDate`: Start date of the education period
-- `endDate`: End date of the education period (optional, null if ongoing)
-- `candidateId`: Foreign key referencing the Candidate
+- `id`: Unique identifier for the book (Primary Key, UUID)
+- `url`: Unique URL of the book on Buscalibre (max 500 characters)
+- `title`: Book title (max 500 characters)
+- `author`: Book author (max 255 characters)
+- `image_url`: URL of the book cover image (max 500 characters)
+- `isbn`: ISBN number if available (nullable, max 20 characters)
+- `created_at`: DateTime when the book was added
+- `updated_at`: DateTime of last update
 
 **Validation Rules:**
-- Institution is required and cannot exceed 100 characters
-- Title is required and cannot exceed 250 characters
-- Start date is required and must be in valid date format
-- End date is optional but must be valid if provided
-- Maximum of 3 education records per candidate
+- URL is required and must be unique
+- Title is required
+- Author is required
 
 **Relationships:**
-- `candidate`: Many-to-one relationship with Candidate model
+- `userBooks`: One-to-many relationship with UserBook model
+- `priceHistories`: One-to-many relationship with PriceHistory model
+- `notifications`: One-to-many relationship with Notification model
 
-### 3. WorkExperience
-Represents work history and professional experience for candidates.
+### 3. UserBook
+Represents the relationship between a user and a book they are tracking.
 
 **Fields:**
-- `id`: Unique identifier for the work experience record (Primary Key)
-- `company`: Name of the company or organization (max 100 characters)
-- `position`: Job title or position held (max 100 characters)
-- `description`: Description of responsibilities and achievements (optional, max 200 characters)
-- `startDate`: Start date of the work experience
-- `endDate`: End date of the work experience (optional, null if current)
-- `candidateId`: Foreign key referencing the Candidate
+- `id`: Unique identifier (Primary Key, UUID)
+- `user_id`: Foreign key referencing the User
+- `book_id`: Foreign key referencing the Book
+- `alert_threshold`: Price threshold for alerts (nullable, Float)
+- `alert_enabled`: Boolean indicating if alerts are active (default: true)
+- `created_at`: DateTime when the user added the book
 
 **Validation Rules:**
-- Company name is required and cannot exceed 100 characters
-- Position is required and cannot exceed 100 characters
-- Description is optional but cannot exceed 200 characters if provided
-- Start date is required and must be in valid date format
-- End date is optional but must be valid if provided
+- User and Book references must exist
+- Alert threshold must be a positive number if provided
 
 **Relationships:**
-- `candidate`: Many-to-one relationship with Candidate model
+- `user`: Many-to-one relationship with User model
+- `book`: Many-to-one relationship with Book model
 
-### 4. Resume
-Represents uploaded resume files associated with candidates.
+### 4. PriceHistory
+Stores historical price data for books scraped from Buscalibre.
 
 **Fields:**
-- `id`: Unique identifier for the resume record (Primary Key)
-- `filePath`: File system path to the uploaded resume (max 500 characters)
-- `fileType`: MIME type or file extension of the resume (max 50 characters)
-- `uploadDate`: Date and time when the resume was uploaded
-- `candidateId`: Foreign key referencing the Candidate
+- `id`: Unique identifier (Primary Key, UUID)
+- `book_id`: Foreign key referencing the Book
+- `price`: Recorded price (Float)
+- `currency`: Currency code (e.g., "CLP", "USD")
+- `available`: Boolean indicating if the book is in stock
+- `scraped_at`: DateTime when the price was scraped
 
 **Validation Rules:**
-- File path is required and cannot exceed 500 characters
-- File type is required and cannot exceed 50 characters
-- Upload date is automatically set when file is uploaded
-- Supported file types: PDF and DOCX (max 10MB)
+- Price must be a positive number
+- Currency is required
 
 **Relationships:**
-- `candidate`: Many-to-one relationship with Candidate model
+- `book`: Many-to-one relationship with Book model
 
-### 5. Company
-Represents companies that post job positions and employ staff.
+### 5. Notification
+Tracks email notifications sent to users when price thresholds are met.
 
 **Fields:**
-- `id`: Unique identifier for the company (Primary Key)
-- `name`: Unique company name
+- `id`: Unique identifier (Primary Key, UUID)
+- `user_id`: Foreign key referencing the User
+- `book_id`: Foreign key referencing the Book
+- `price_at_notification`: Price when the notification was sent
+- `sent_at`: DateTime when the notification was sent
 
 **Relationships:**
-- `employees`: One-to-many relationship with Employee model
-- `positions`: One-to-many relationship with Position model
-
-### 6. Employee
-Represents employees within companies who can conduct interviews.
-
-**Fields:**
-- `id`: Unique identifier for the employee (Primary Key)
-- `name`: Employee's full name
-- `email`: Employee's unique email address
-- `role`: Employee's role or job title
-- `isActive`: Boolean indicating if the employee is currently active
-- `companyId`: Foreign key referencing the Company
-
-**Relationships:**
-- `company`: Many-to-one relationship with Company model
-- `interviews`: One-to-many relationship with Interview model
-
-### 7. InterviewType
-Defines different types of interviews that can be conducted.
-
-**Fields:**
-- `id`: Unique identifier for the interview type (Primary Key)
-- `name`: Name of the interview type (e.g., "Technical", "HR", "Behavioral")
-- `description`: Detailed description of the interview type (optional)
-
-**Relationships:**
-- `interviewSteps`: One-to-many relationship with InterviewStep model
-
-### 8. InterviewFlow
-Represents a sequence of interview steps that define the hiring process.
-
-**Fields:**
-- `id`: Unique identifier for the interview flow (Primary Key)
-- `description`: Description of the interview flow process (optional)
-
-**Relationships:**
-- `interviewSteps`: One-to-many relationship with InterviewStep model
-- `positions`: One-to-many relationship with Position model
-
-### 9. InterviewStep
-Represents individual steps within an interview flow.
-
-**Fields:**
-- `id`: Unique identifier for the interview step (Primary Key)
-- `name`: Name of the interview step
-- `orderIndex`: Numeric order of this step within the flow
-- `interviewFlowId`: Foreign key referencing the InterviewFlow
-- `interviewTypeId`: Foreign key referencing the InterviewType
-
-**Relationships:**
-- `interviewFlow`: Many-to-one relationship with InterviewFlow model
-- `interviewType`: Many-to-one relationship with InterviewType model
-- `applications`: One-to-many relationship with Application model
-- `interviews`: One-to-many relationship with Interview model
-
-### 10. Position
-Represents job positions available for application.
-
-**Fields:**
-- `id`: Unique identifier for the position (Primary Key)
-- `companyId`: Foreign key referencing the Company (required)
-- `interviewFlowId`: Foreign key referencing the InterviewFlow (required)
-- `title`: Job title (required, max 100 characters)
-- `description`: Brief description of the position (required)
-- `status`: Current status of the position (default: "Draft", valid values: Open, Contratado, Cerrado, Borrador)
-- `isVisible`: Boolean indicating if the position is publicly visible (default: false)
-- `location`: Job location (required)
-- `jobDescription`: Detailed job description (required)
-- `requirements`: Job requirements and qualifications (optional)
-- `responsibilities`: Job responsibilities (optional)
-- `salaryMin`: Minimum salary range (optional, must be >= 0)
-- `salaryMax`: Maximum salary range (optional, must be >= 0 and >= salaryMin)
-- `employmentType`: Type of employment (e.g., "Full-time", "Part-time", "Contract") (optional)
-- `benefits`: Job benefits description (optional)
-- `companyDescription`: Description of the hiring company (optional)
-- `applicationDeadline`: Deadline for applications (optional, must be a future date)
-- `contactInfo`: Contact information for inquiries (optional)
-
-**Validation Rules:**
-- Title is required and cannot exceed 100 characters
-- Description, location, and jobDescription are required fields
-- Status must be one of: Open, Contratado, Cerrado, Borrador
-- Company and interview flow references must exist in the database
-- Salary values must be non-negative numbers
-- Application deadline must be a future date if provided
-
-**Relationships:**
-- `company`: Many-to-one relationship with Company model
-- `interviewFlow`: Many-to-one relationship with InterviewFlow model
-- `applications`: One-to-many relationship with Application model
-
-### 11. Application
-Represents a candidate's application to a specific position.
-
-**Fields:**
-- `id`: Unique identifier for the application (Primary Key)
-- `applicationDate`: Date when the application was submitted
-- `currentInterviewStep`: Current step in the interview process
-- `notes`: Additional notes about the application (optional)
-- `positionId`: Foreign key referencing the Position
-- `candidateId`: Foreign key referencing the Candidate
-- `interviewStepId`: Foreign key referencing the current InterviewStep
-
-**Relationships:**
-- `position`: Many-to-one relationship with Position model
-- `candidate`: Many-to-one relationship with Candidate model
-- `interviewStep`: Many-to-one relationship with InterviewStep model
-- `interviews`: One-to-many relationship with Interview model
-
-### 12. Interview
-Represents individual interview sessions conducted as part of an application.
-
-**Fields:**
-- `id`: Unique identifier for the interview (Primary Key)
-- `interviewDate`: Date and time of the interview
-- `result`: Interview result or outcome (optional)
-- `score`: Numeric score or rating from the interview (optional)
-- `notes`: Interview notes and feedback (optional)
-- `applicationId`: Foreign key referencing the Application
-- `interviewStepId`: Foreign key referencing the InterviewStep
-- `employeeId`: Foreign key referencing the conducting Employee
-
-**Relationships:**
-- `application`: Many-to-one relationship with Application model
-- `interviewStep`: Many-to-one relationship with InterviewStep model
-- `employee`: Many-to-one relationship with Employee model
+- `user`: Many-to-one relationship with User model
+- `book`: Many-to-one relationship with Book model
 
 ## Entity Relationship Diagram
 
 ```mermaid
 erDiagram
-    Candidate {
-        Int id PK
-        String firstName
-        String lastName
-        String email UK
-        String phone
-        String address
+    AuthUser {
+        uuid id PK
+        string email
+        DateTime created_at
     }
-    Education {
-        Int id PK
-        String institution
-        String title
-        DateTime startDate
-        DateTime endDate
-        Int candidateId FK
+    User {
+        uuid id PK
+        string email
+        string name
+        DateTime created_at
+        DateTime updated_at
     }
-    WorkExperience {
-        Int id PK
-        String company
-        String position
-        String description
-        DateTime startDate
-        DateTime endDate
-        Int candidateId FK
+    Book {
+        uuid id PK
+        string url UK
+        string title
+        string author
+        string image_url
+        string isbn
+        DateTime created_at
+        DateTime updated_at
     }
-    Resume {
-        Int id PK
-        String filePath
-        String fileType
-        DateTime uploadDate
-        Int candidateId FK
+    UserBook {
+        uuid id PK
+        uuid user_id FK
+        uuid book_id FK
+        float alert_threshold
+        bool alert_enabled
+        DateTime created_at
     }
-    Company {
-        Int id PK
-        String name UK
+    PriceHistory {
+        uuid id PK
+        uuid book_id FK
+        float price
+        string currency
+        bool available
+        DateTime scraped_at
     }
-    Employee {
-        Int id PK
-        String name
-        String email UK
-        String role
-        Boolean isActive
-        Int companyId FK
-    }
-    InterviewType {
-        Int id PK
-        String name
-        String description
-    }
-    InterviewFlow {
-        Int id PK
-        String description
-    }
-    InterviewStep {
-        Int id PK
-        String name
-        Int orderIndex
-        Int interviewFlowId FK
-        Int interviewTypeId FK
-    }
-    Position {
-        Int id PK
-        String title
-        String description
-        String status
-        Boolean isVisible
-        String location
-        String jobDescription
-        String requirements
-        String responsibilities
-        Float salaryMin
-        Float salaryMax
-        String employmentType
-        String benefits
-        String companyDescription
-        DateTime applicationDeadline
-        String contactInfo
-        Int companyId FK
-        Int interviewFlowId FK
-    }
-    Application {
-        Int id PK
-        DateTime applicationDate
-        Int currentInterviewStep
-        String notes
-        Int positionId FK
-        Int candidateId FK
-        Int interviewStepId FK
-    }
-    Interview {
-        Int id PK
-        DateTime interviewDate
-        String result
-        Int score
-        String notes
-        Int applicationId FK
-        Int interviewStepId FK
-        Int employeeId FK
+    Notification {
+        uuid id PK
+        uuid user_id FK
+        uuid book_id FK
+        float price_at_notification
+        DateTime sent_at
     }
 
-    Candidate ||--o{ Education : "has"
-    Candidate ||--o{ WorkExperience : "has"
-    Candidate ||--o{ Resume : "has"
-    Candidate ||--o{ Application : "submits"
-    
-    Company ||--o{ Employee : "employs"
-    Company ||--o{ Position : "offers"
-    
-    InterviewType ||--o{ InterviewStep : "defines"
-    InterviewFlow ||--o{ InterviewStep : "includes"
-    InterviewFlow ||--o{ Position : "guides"
-    
-    Position ||--o{ Application : "receives"
-    Application ||--o{ Interview : "includes"
-    
-    InterviewStep ||--o{ Application : "current_step"
-    InterviewStep ||--o{ Interview : "conducted_at"
-    
-    Employee ||--o{ Interview : "conducts"
+    User ||--|| AuthUser : "references"
+    User ||--o{ UserBook : "tracks"
+    User ||--o{ Notification : "receives"
+    Book ||--o{ UserBook : "tracked_by"
+    Book ||--o{ PriceHistory : "has"
+    Book ||--o{ Notification : "triggers"
+    UserBook }o--|| Book : "references"
+    UserBook }o--|| User : "references"
+    PriceHistory }o--|| Book : "references"
+    Notification }o--|| User : "references"
+    Notification }o--|| Book : "references"
 ```
 
 ## Key Design Principles
 
-1. **Referential Integrity**: All foreign key relationships ensure data consistency across the system.
+1. **Supabase Auth Integration**: Authentication is handled by Supabase Auth (`auth.users` table). The `public.users` table stores additional profile information and is automatically populated via trigger when a new user registers.
 
-2. **Flexibility**: The interview flow system allows for customizable hiring processes per position.
+2. **Row Level Security (RLS)**: All tables with sensitive data have RLS enabled. Policies ensure users can only access their own data.
 
-3. **Audit Trail**: Application and interview dates provide a complete timeline of the hiring process.
+3. **Referential Integrity**: All foreign key relationships ensure data consistency across the system.
 
-4. **Extensibility**: The modular design allows for easy addition of new features and data points.
+4. **Price Tracking**: The PriceHistory entity allows storing complete price history for analysis and charts.
 
-5. **Data Normalization**: The model follows database normalization principles to minimize redundancy and ensure data integrity.
+5. **User Alerts**: The UserBook entity with alert_threshold enables customizable price alerts per user per book.
+
+6. **Notification Audit**: The Notification entity provides an audit trail for all sent price alert emails.
+
+7. **Data Normalization**: The model follows database normalization principles to minimize redundancy and ensure data integrity.
 
 ## Notes
 
-- All `id` fields serve as primary keys with auto-increment functionality
+- All `id` fields are UUIDs (Primary Keys with auto-generation)
+- The `User` table references `auth.users` via foreign key constraint
+- RLS is enabled on `public.users` with policies restricting access to own record only
+- A trigger (`on_auth_user_created`) automatically creates a user profile when a new user registers via Supabase Auth
 - Foreign key relationships maintain referential integrity
 - Optional fields allow for flexible data entry while maintaining required core information
-- The interview system supports multi-step hiring processes with different types of interviews
-- Email fields have unique constraints to prevent duplicate accounts 
+- The system supports multiple users tracking the same book with different alert thresholds
+- Email fields have unique constraints to prevent duplicate accounts
