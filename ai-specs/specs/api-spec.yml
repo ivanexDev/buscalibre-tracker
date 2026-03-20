@@ -95,19 +95,37 @@ paths:
 
   /books:
     get:
-      summary: Get all books
-      description: Retrieve a list of all books tracked in the system
+      summary: Get user's books
+      description: Retrieve a list of all books tracked by the authenticated user with current prices
       tags:
         - Books
+      security:
+        - bearerAuth: []
       responses:
         '200':
-          description: Successfully retrieved books
+          description: Successfully retrieved user's books
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Book'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      books:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserBook'
+                      count:
+                        type: integer
+        '401':
+          description: Unauthorized - invalid or missing authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '500':
           description: Internal server error
           content:
@@ -148,9 +166,11 @@ paths:
   /books/{id}:
     get:
       summary: Get book by ID
-      description: Retrieve detailed information about a specific book including current price
+      description: Retrieve detailed information about a specific book including current price and price history
       tags:
         - Books
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -165,9 +185,29 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Book'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      book:
+                        $ref: '#/components/schemas/UserBookDetails'
+        '400':
+          description: Invalid book ID format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Book not found
+          description: Book not found or not owned by user
     
     delete:
       summary: Delete book
@@ -308,34 +348,61 @@ paths:
 
 components:
   schemas:
-    Book:
+    UserBook:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        url:
-          type: string
+          description: Book ID
         title:
           type: string
         author:
           type: string
-        image_url:
+        imageUrl:
           type: string
-        isbn:
-          type: string
+          description: URL to book cover image
+        currentPrice:
+          type: number
           nullable: true
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
+          description: Current price in CLP
+        lowestPrice:
+          type: number
+          nullable: true
+          description: Lowest historical price
+        highestPrice:
+          type: number
+          nullable: true
+          description: Highest historical price
+        alertEnabled:
+          type: boolean
+        alertThreshold:
+          type: number
+          nullable: true
+          description: Price threshold for alerts
+        createdAt:
           type: string
           format: date-time
       required:
         - id
-        - url
         - title
         - author
+        - imageUrl
+
+    UserBookDetails:
+      allOf:
+        - $ref: '#/components/schemas/UserBook'
+        - type: object
+          properties:
+            url:
+              type: string
+            isbn:
+              type: string
+              nullable: true
+            priceHistory:
+              type: array
+              items:
+                $ref: '#/components/schemas/PriceHistory'
 
     PriceHistory:
       type: object
@@ -423,9 +490,17 @@ components:
     ErrorResponse:
       type: object
       properties:
+        success:
+          type: boolean
         error:
-          type: string
+          type: object
+          properties:
+            message:
+              type: string
+            code:
+              type: string
       required:
+        - success
         - error
 
 tags:
@@ -437,3 +512,9 @@ tags:
     description: Notification history
   - name: Authentication
     description: User registration and session management
+
+securitySchemes:
+  bearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
